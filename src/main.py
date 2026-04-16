@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Request
 from src.engine import client, process_resume_pdf, default_storage_context
-from src.schema import MatchAnalysis, JobInquiry
+from src.schema import MatchAnalysis, JobInquiry, ResumeProfile
 from src.database import get_db, MatchRecord
 from sqlalchemy.orm import Session
 from llama_index.readers.file import PyMuPDFReader
