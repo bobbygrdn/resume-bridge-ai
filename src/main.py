@@ -50,10 +50,17 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
             .order_by(MatchRecord.match_score.desc())\
             .all()
 
+        identity_label = "Identity Not Yet Indexed"
+        collections = client.scroll(
+            collection_name="resume_collection",
+            limit=1,
+            with_payload=True
+        )
+
         if collections[0]:
             profile = collections[0][0].payload
-            name = profile.get("full_name", "Robert Gordon")
-            headline = profile.get("headline", "CS Student & AI Engineer")
+            name = profile.get("full_name", "Anonymous Professional")
+            headline = profile.get("headline", "Verified AI Scout")
             identity_label = f"{name} | {headline}"
 
         return templates.TemplateResponse(
