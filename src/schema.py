@@ -27,7 +27,7 @@ class Education(BaseModel):
 # ResumeProfile Class to represent the overall resume profile
 class ResumeProfile(BaseModel):
     full_name: str
-    headline: str = Field(description="A short professional tagline (e.g., 'Senior AI Engineer')")
+    headline: str = Field(max_length=60, description="A short professional tagline (e.g., 'Senior AI Engineer')")
     email: str
     github_url: Optional[HttpUrl] = None
     portfolio_url: Optional[HttpUrl] = None
