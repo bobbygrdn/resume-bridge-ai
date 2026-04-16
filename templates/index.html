@@ -51,14 +51,6 @@
             box-sizing: border-box;
         }
 
-        .card {
-            background: var(--card);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            border-top: 5px solid var(--primary);
-        }
-
         .score-pill {
             display: inline-block;
             padding: 0.25rem 0.75rem;
@@ -283,7 +275,7 @@
                     <div style="display: flex; gap: 1rem; align-items: center;">
                         <a href="{{ match.url }}" target="_blank" class="btn-view">View Job →</a>
 
-                        <button onclick="copyPitch(this, `{{ match.personalized_pitch|escapejs }}`)" class="btn-copy"
+                        <button data-pitch="{{ match.personalized_pitch }}" onclick="copyPitch(this)" class="btn-copy"
                             style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #475569;">
                             📋 Copy Pitch
                         </button>
@@ -327,7 +319,9 @@
             }
         }
 
-        async function copyPitch(btn, text) {
+        async function copyPitch(btn) {
+            const text = btn.getAttribute('data-pitch');
+
             try {
                 await navigator.clipboard.writeText(text);
 
