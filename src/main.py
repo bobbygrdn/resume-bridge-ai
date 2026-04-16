@@ -46,14 +46,20 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     """The Visual Dashboard: Pulls from SQLite Memory"""
     try:
         matches = db.query(MatchRecord)\
-            .filter(MatchRecord.match_score >= 50)\
+            .filter(MatchRecord.match_score >= 60)\
             .order_by(MatchRecord.match_score.desc())\
             .all()
+
+        if collections[0]:
+            profile = collections[0][0].payload
+            name = profile.get("full_name", "Robert Gordon")
+            headline = profile.get("headline", "CS Student & AI Engineer")
+            identity_label = f"{name} | {headline}"
 
         return templates.TemplateResponse(
             request=request,
             name="index.html",
-            context={"matches": matches}
+            context={"matches": matches, "identity_label": identity_label}
         )
     except Exception as e:
         print(f"Dashboard Error: {e}")
