@@ -5,6 +5,7 @@ from src.schema import MatchAnalysis, JobInquiry, ResumeProfile
 from src.database import get_db, MatchRecord
 from sqlalchemy.orm import Session
 from llama_index.readers.file import PyMuPDFReader
+from crawl4ai import AsyncWebCrawler, BrowserConfig
 import shutil
 import os
 from pathlib import Path
