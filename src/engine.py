@@ -45,6 +45,8 @@ extraction_program = LLMTextCompletionProgram.from_defaults(
         "You are an expert technical recruiter. Extract professional information "
         "from the following resume text. Create a compelling 'headline' that "
         "summarizes their expertise and intent.\n\n"
+        "CRITICAL: The 'headline' MUST be under 60 characters total. "
+        "Be concise (e.g., 'Senior AI Engineer').\n\n"
         "RESUME TEXT:\n{text}"
     ),
     llm=OpenAI(model="gpt-4o-mini", temperature=0)
