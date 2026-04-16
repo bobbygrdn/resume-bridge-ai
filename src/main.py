@@ -78,7 +78,7 @@ async def upload_resume(file: UploadFile = File(...)):
 async def match_job(inquiry: JobInquiry, db: Session = Depends(get_db)):
     try:
         existing_match = db.query(MatchRecord).filter(MatchRecord.url == inquiry.target_url).first()
-    
+
         if existing_match:
             print(f"Returning cached match for: {existing_match.job_title}")
             return MatchAnalysis(
@@ -101,19 +101,29 @@ async def match_job(inquiry: JobInquiry, db: Session = Depends(get_db)):
 
 async def perform_analysis_logic(markdown_content: str, url: str, db: Session):
     """
-    The shared 'Brain' of the application. 
+    The shared 'Brain' of the application.
     Processes raw markdown into a saved MatchRecord.
     """
     try:
         structured_job = job_extraction_program(text=markdown_content)
-        
+
         if not structured_job.job_title or structured_job.job_title.lower() in ["not listed", "not found"]:
             await log_queue.put(f"⚠️ Skipping dead listing: {url[:40]}...")
-            return None
+            return MatchAnalysis(
+                match_score=0,
+                key_alignments=[],
+                skill_gaps=[],
+                personalized_pitch="No valid job data found or parsing failed."
+            )
 
     except Exception as e:
         await log_queue.put(f"❌ Could not parse job at {url[:30]}... (Likely a dead link)")
-        return None
+        return MatchAnalysis(
+            match_score=0,
+            key_alignments=[],
+            skill_gaps=[],
+            personalized_pitch="No valid job data found or parsing failed."
+        )
 
     await log_queue.put(f"Comparing '{structured_job.job_title}' at {structured_job.company_name} against your identity...")
 
