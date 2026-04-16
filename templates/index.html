@@ -280,7 +280,15 @@
                 <p class="pitch">{{ match.personalized_pitch }}</p>
 
                 <div class="actions">
-                    <a href="{{ match.url }}" target="_blank" class="btn-view">View Job →</a>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <a href="{{ match.url }}" target="_blank" class="btn-view">View Job →</a>
+
+                        <button onclick="copyPitch(this, `{{ match.personalized_pitch|escapejs }}`)" class="btn-copy"
+                            style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #475569;">
+                            📋 Copy Pitch
+                        </button>
+                    </div>
+
                     <form action="/delete-match/{{ match.id }}" method="post" style="display:inline;">
                         <button type="submit" class="btn-delete"
                             onclick="return confirm('Archive this match?')">Remove</button>
@@ -316,6 +324,26 @@
             } finally {
                 spinner.style.display = 'none';
                 setTimeout(() => location.reload(), 2000);
+            }
+        }
+
+        async function copyPitch(btn, text) {
+            try {
+                await navigator.clipboard.writeText(text);
+
+                const originalText = btn.innerHTML;
+                btn.innerHTML = "✅ Copied!";
+                btn.style.borderColor = "var(--success)";
+                btn.style.color = "var(--success)";
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.borderColor = "#cbd5e1";
+                    btn.style.color = "#475569";
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                alert("Could not copy pitch. Check console.");
             }
         }
     </script>
