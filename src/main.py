@@ -1,15 +1,21 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from src.engine import client, process_resume_pdf, default_storage_context
-from src.schema import MatchAnalysis, JobInquiry, ResumeProfile
+from src.scraper import scrape_job_listing, job_extraction_program
+from src.schema import MatchAnalysis, JobInquiry
 from src.database import get_db, MatchRecord
+from src.search_provider import find_job_urls
 from sqlalchemy.orm import Session
+from llama_index.core import VectorStoreIndex
 from llama_index.readers.file import PyMuPDFReader
-from crawl4ai import AsyncWebCrawler, BrowserConfig
 import shutil
-import os
 from pathlib import Path
+import os
 import asyncio
+import re
 
 crawler_instance = None
 log_queue = asyncio.Queue()
