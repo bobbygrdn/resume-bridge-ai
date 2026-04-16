@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Request
 from src.engine import client, process_resume_pdf, default_storage_context
 from src.schema import MatchAnalysis, JobInquiry, ResumeProfile
