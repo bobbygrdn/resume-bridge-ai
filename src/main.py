@@ -72,3 +72,27 @@ async def upload_resume(file: UploadFile = File(...)):
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
+
+@app.post("/match-job", response_model=MatchAnalysis)
+async def match_job(inquiry: JobInquiry, db: Session = Depends(get_db)):
+    try:
+        existing_match = db.query(MatchRecord).filter(MatchRecord.url == inquiry.target_url).first()
+    
+        if existing_match:
+            print(f"Returning cached match for: {existing_match.job_title}")
+            return MatchAnalysis(
+                match_score=existing_match.match_score,
+                key_alignments=existing_match.key_alignments,
+                skill_gaps=existing_match.skill_gaps,
+                personalized_pitch=existing_match.personalized_pitch
+            )
+
+        result = await crawler_instance.arun(url=inquiry.target_url)
+        if not result.success:
+            raise HTTPException(status_code=500, detail="Scrape failed")
+
+        return await perform_analysis_logic(result.markdown, inquiry.target_url, db)
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
