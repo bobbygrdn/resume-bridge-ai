@@ -59,10 +59,9 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
 
         if collections[0]:
             profile = collections[0][0].payload
-            metadata = profile.get("metadata", {})
 
-            name = metadata.get("full_name", "Anonymous Professional")
-            headline = metadata.get("headline", "Verified AI Scout")
+            name = profile.get("full_name", "Anonymous Professional")
+            headline = profile.get("headline", "Verified AI Scout")
             identity_label = f"{name} | {headline}"
 
         return templates.TemplateResponse(
