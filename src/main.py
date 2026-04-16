@@ -19,6 +19,7 @@ import re
 
 crawler_instance = None
 log_queue = asyncio.Queue()
+templates = Jinja2Templates(directory="templates")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,10 +37,36 @@ async def lifespan(app: FastAPI):
     await crawler_instance.close()
     print("Scraper Engine Shutdown")
 
-asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 app = FastAPI(title="Resume Matcher API", lifespan=lifespan)
 reader = PyMuPDFReader()
+
+@app.get("/", response_class=HTMLResponse)
+async def dashboard(request: Request, db: Session = Depends(get_db)):
+    """The Visual Dashboard: Pulls from SQLite Memory"""
+    try:
+        matches = db.query(MatchRecord)\
+            .filter(MatchRecord.match_score >= 50)\
+            .order_by(MatchRecord.match_score.desc())\
+            .all()
+
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context={"matches": matches}
+        )
+    except Exception as e:
+        print(f"Dashboard Error: {e}")
+        raise HTTPException(status_code=500, detail="Could not load dashboard")
+
+@app.post("/delete-match/{match_id}")
+async def delete_match(match_id: int, db: Session = Depends(get_db)):
+    """Removes a match you're not interested in"""
+    record = db.query(MatchRecord).filter(MatchRecord.id == match_id).first()
+    if record:
+        db.delete(record)
+        db.commit()
+    return RedirectResponse(url="/", status_code=303)
 
 @app.get("/health")
 async def health_check():
@@ -84,7 +111,7 @@ async def upload_resume(file: UploadFile = File(...)):
 async def match_job(inquiry: JobInquiry, db: Session = Depends(get_db)):
     try:
         existing_match = db.query(MatchRecord).filter(MatchRecord.url == inquiry.target_url).first()
-
+    
         if existing_match:
             print(f"Returning cached match for: {existing_match.job_title}")
             return MatchAnalysis(
@@ -103,6 +130,25 @@ async def match_job(inquiry: JobInquiry, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/matches")
+async def get_saved_matches(min_score: int = 0, db: Session = Depends(get_db)):
+    """
+    Retrieve all saved matches, optionally filtering by a minimum score.
+    Useful for seeing which jobs are worth your time.
+    """
+    results = db.query(MatchRecord).filter(MatchRecord.match_score >= min_score).all()
+    return results
+
+async def log_broadcaster():
+    """Generator that sends messages to the frontend."""
+    while True:
+        msg = await log_queue.get()
+        yield f"data: {msg}\n\n"
+
+@app.get("/stream-logs")
+async def stream_logs():
+    return StreamingResponse(log_broadcaster(), media_type="text/event-stream")
 
 @app.post("/hunt-jobs")
 async def hunt_jobs(search_query: str, db: Session = Depends(get_db)):
@@ -173,29 +219,19 @@ def clean_llm_json(raw_text: str) -> str:
 
 async def perform_analysis_logic(markdown_content: str, url: str, db: Session):
     """
-    The shared 'Brain' of the application.
+    The shared 'Brain' of the application. 
     Processes raw markdown into a saved MatchRecord.
     """
     try:
         structured_job = job_extraction_program(text=markdown_content)
-
+        
         if not structured_job.job_title or structured_job.job_title.lower() in ["not listed", "not found"]:
             await log_queue.put(f"⚠️ Skipping dead listing: {url[:40]}...")
-            return MatchAnalysis(
-                match_score=0,
-                key_alignments=[],
-                skill_gaps=[],
-                personalized_pitch="No valid job data found or parsing failed."
-            )
+            return None
 
     except Exception as e:
         await log_queue.put(f"❌ Could not parse job at {url[:30]}... (Likely a dead link)")
-        return MatchAnalysis(
-            match_score=0,
-            key_alignments=[],
-            skill_gaps=[],
-            personalized_pitch="No valid job data found or parsing failed."
-        )
+        return None
 
     await log_queue.put(f"Comparing '{structured_job.job_title}' at {structured_job.company_name} against your identity...")
 
