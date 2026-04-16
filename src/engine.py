@@ -9,11 +9,8 @@ from src.schema import ResumeProfile
 
 load_dotenv()
 
-# --- 1. Client Configuration ---
-# This connects to the Qdrant instance you started via Docker
 client = QdrantClient(url="http://localhost:6333")
 
-# Async client for FastAPI request handling
 aclient = AsyncQdrantClient(url="http://localhost:6333")
 
 def init_storage(collection_name: str = "resume_collection"):
@@ -22,14 +19,12 @@ def init_storage(collection_name: str = "resume_collection"):
     This is the 'handshake' between your code and the database.
     """
     try:
-        # 2. Vector Store: The LlamaIndex wrapper for Qdrant
         vector_store = QdrantVectorStore(
             client=client,
             aclient=aclient,
             collection_name=collection_name
         )
 
-        # 3. Storage Context: The container for your indices
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
         print(f"✅ Successfully connected to Qdrant collection: '{collection_name}'")
@@ -39,19 +34,17 @@ def init_storage(collection_name: str = "resume_collection"):
         print(f"❌ Connection Failed: {str(e)}")
         raise e
 
-# Initialize a default context for the application
 try:
     default_storage_context = init_storage()
 except Exception:
     default_storage_context = None
 
-# --- 1. Extraction Program ---
 extraction_program = LLMTextCompletionProgram.from_defaults(
     output_cls=ResumeProfile,
     prompt_template_str=(
         "You are an expert technical recruiter. Extract professional information "
-        "from the following resume text. Ensure the 'target_roles' reflect the "
-        "candidate's future career intent.\n\n"
+        "from the following resume text. Create a compelling 'headline' that "
+        "summarizes their expertise and intent.\n\n"
         "RESUME TEXT:\n{text}"
     ),
     llm=OpenAI(model="gpt-4o-mini", temperature=0)
@@ -68,7 +61,7 @@ async def process_resume_pdf(text: str, storage_context):
 
     doc = Document(
         text=text,
-        metadate=profile.model_dump()
+        metadata=profile.model_dump()
     )
 
     index = VectorStoreIndex.from_documents(
