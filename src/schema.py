@@ -36,7 +36,6 @@ class ResumeProfile(BaseModel):
     experience: List[Experience]
     education: List[Education]
 
-
 # MatchAnalysis Class to represent the analysis of how well a resume matches a job description
 class MatchAnalysis(BaseModel):
     match_score: int = Field(ge=0, le=100, description="Probability of fit for this role")
@@ -48,3 +47,13 @@ class MatchAnalysis(BaseModel):
 class JobInquiry(BaseModel):
     target_url: str
     user_id: str = "default_user"
+
+# JobPosting Class to represent the structured data extracted from a job posting
+class JobPosting(BaseModel):
+    company_name: str
+    job_title: str
+    location: str = Field(description="City, State, or 'Remote'")
+    tech_stack: List[str] = Field(description="List of required languages, frameworks, or tools")
+    requirements: List[str] = Field(description="Core responsibilities or must-have experience")
+    is_technical: bool = Field(description="Whether this is a software, AI, or data role")
+    salary_range: Optional[str] = "Not Listed"
