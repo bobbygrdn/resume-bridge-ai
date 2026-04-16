@@ -1,0 +1,16 @@
+# --- Core Frameworks ---
+fastapi[standard]           # Includes the 'fastapi dev' command
+uvicorn                     # High-performance server
+python-dotenv               # For .env management
+
+# --- AI & Vector Logic ---
+llama-index-core            # The skeleton
+llama-index-readers-file    # For PDF support (replacing pypdf directly)
+llama-index-llms-openai     # OpenAI integration
+llama-index-embeddings-openai # Vector generation
+llama-index-vector-stores-qdrant # Qdrant integration
+qdrant-client               # The low-level driver
+pymupdf                      # For PDF parsing (replacing pypdf directly)
+
+# --- Scraping ---
+crawl4ai                    # Modern LLM-ready scraper
