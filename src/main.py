@@ -98,6 +98,72 @@ async def match_job(inquiry: JobInquiry, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/hunt-jobs")
+async def hunt_jobs(search_query: str, db: Session = Depends(get_db)):
+    """
+    The Agentic Loop:
+    1. Finds URLs -> 2. Filters existing -> 3. Matches -> 4. Saves
+    """
+
+    await log_queue.put(f"Starting hunt for: {search_query}")
+    candidate_urls = find_job_urls(search_query, max_results=10)
+
+    await log_queue.put(f"Scout found {len(candidate_urls)} URLs.")
+
+    urls_to_process = [
+        url for url in candidate_urls
+        if not db.query(MatchRecord).filter(MatchRecord.url == url).first()
+    ]
+
+    dupes = len(candidate_urls) - len(urls_to_process)
+    if dupes > 0:
+        await log_queue.put(f"Skipping {dupes} jobs already in your memory.")
+
+    if not urls_to_process:
+        await log_queue.put("All found jobs have already been analyzed.")
+        return {"status": "Complete", "message": "All found jobs already exist in DB."}
+
+    run_config = CrawlerRunConfig(
+        cache_mode=CacheMode.BYPASS,
+        wait_until="networkidle",
+        page_timeout=30000
+    )
+
+    await log_queue.put(f"Running concurrent scrape for {len(urls_to_process)} URLs...")
+    results = await crawler_instance.arun_many(urls=urls_to_process, config=run_config)
+
+    matches_found = []
+
+    for result in results:
+        if not result.success:
+            await log_queue.put(f"Failed to scrape: {result.url}")
+            continue
+
+        try:
+            analysis_obj = await perform_analysis_logic(result.markdown, result.url, db)
+
+            if analysis_obj and analysis_obj.match_score >= 50:
+                matches_found.append({
+                    "job": f"{analysis_obj.match_score}% - {result.url[:30]}..."
+                })
+        except Exception as e:
+            print(f"Error processing {result.url}: {e}")
+
+    await log_queue.put("🏁 Hunt complete. Dashboard refreshing...")
+    return {"status": "Hunt Complete"}
+
+def sanitize_json_string(text: str) -> str:
+    """Removes LLM chatter like triple backticks or trailing newlines."""
+    match = re.search(r'\{.*\}', text, re.DOTALL)
+    return match.group(0) if match else text
+
+def clean_llm_json(raw_text: str) -> str:
+    """Explicitly extracts only the content between the first and last curly braces."""
+    start = raw_text.find('{')
+    end = raw_text.rfind('}')
+    if start != -1 and end != -1:
+        return raw_text[start:end + 1]
+    return raw_text
 
 async def perform_analysis_logic(markdown_content: str, url: str, db: Session):
     """
