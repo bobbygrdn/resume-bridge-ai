@@ -12,6 +12,7 @@ from pathlib import Path
 import asyncio
 
 crawler_instance = None
+log_queue = asyncio.Queue()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -96,3 +97,76 @@ async def match_job(inquiry: JobInquiry, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def perform_analysis_logic(markdown_content: str, url: str, db: Session):
+    """
+    The shared 'Brain' of the application. 
+    Processes raw markdown into a saved MatchRecord.
+    """
+    try:
+        structured_job = job_extraction_program(text=markdown_content)
+        
+        if not structured_job.job_title or structured_job.job_title.lower() in ["not listed", "not found"]:
+            await log_queue.put(f"⚠️ Skipping dead listing: {url[:40]}...")
+            return None
+
+    except Exception as e:
+        await log_queue.put(f"❌ Could not parse job at {url[:30]}... (Likely a dead link)")
+        return None
+
+    await log_queue.put(f"Comparing '{structured_job.job_title}' at {structured_job.company_name} against your identity...")
+
+    collections = client.scroll(
+        collection_name="resume_collection",
+        limit=1,
+        with_payload=True
+    )
+
+    if not collections[0]:
+        raise HTTPException(status_code=404, detail="No resume profile found in Qdrant.")
+    my_profile = collections[0][0].payload
+
+    from llama_index.llms.openai import OpenAI
+    llm = OpenAI(model="gpt-4o")
+
+    prompt = (
+        f"ACT AS A SKEPTICAL TECHNICAL RECRUITER.\n"
+        f"CANDIDATE DATA: {my_profile}\n\n"
+        f"JOB DESCRIPTION: {structured_job.model_dump()}\n\n"
+        "INSTRUCTIONS:\n"
+        "1. Compare CANDIDATE DATA against the JOB DESCRIPTION.\n"
+        "2. If a skill is NOT explicitly in the data, it is a GAP.\n"
+        "3. DO NOT INFER. Provide a MatchAnalysis JSON response."
+    )
+
+    s_llm = llm.as_structured_llm(MatchAnalysis)
+    analysis = await s_llm.acomplete(prompt)
+
+    clean_json = clean_llm_json(analysis.text)
+    try:
+        analysis_obj = MatchAnalysis.model_validate_json(clean_json)
+    except Exception as e:
+        await log_queue.put(f"❌ Validation failed for {url[:30]}")
+        return MatchAnalysis(match_score=0, key_alignments=[], skill_gaps=[], personalized_pitch="Parsing error.")
+
+    await log_queue.put(f"Result: {analysis_obj.match_score}% Match for {structured_job.job_title}")
+
+    if analysis_obj.match_score >= 60:
+        new_record = MatchRecord(
+            job_title=structured_job.job_title,
+            company_name=structured_job.company_name,
+            match_score=analysis_obj.match_score,
+            key_alignments=analysis_obj.key_alignments,
+            skill_gaps=analysis_obj.skill_gaps,
+            personalized_pitch=analysis_obj.personalized_pitch,
+            url=url
+        )
+        db.add(new_record)
+        db.commit()
+        await log_queue.put(f"✅ Saved high-value match: {analysis_obj.match_score}%")
+    else:
+        await log_queue.put(f"⏭️ Discarding low match: {analysis_obj.match_score}%")
+
+    await log_queue.put(f"🎯 Analysis Complete: {analysis_obj.match_score}% Match.")
+    return analysis_obj
