@@ -27,8 +27,10 @@ class Education(BaseModel):
 # ResumeProfile Class to represent the overall resume profile
 class ResumeProfile(BaseModel):
     full_name: str
+    headline: str = Field(description="A short professional tagline (e.g., 'Senior AI Engineer')")
     email: str
     github_url: Optional[HttpUrl] = None
+    portfolio_url: Optional[HttpUrl] = None
     summary: str = Field(description="A 2-3 sentence professional summary")
     target_roles: List[str] = Field(description="Specific job titles or niches the user is pursuing (e.g., 'AI Engineer', 'Backend Developer')")
     skills: List[str] = Field(description="Core technical and soft skills")
