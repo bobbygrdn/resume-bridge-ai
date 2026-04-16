@@ -9,6 +9,24 @@ import os
 from pathlib import Path
 import asyncio
 
+crawler_instance = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global crawler_instance
+    if os.name == 'nt':
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
+    browser_config = BrowserConfig(headless=True, verbose=True)
+    crawler_instance = AsyncWebCrawler(config=browser_config)
+    await crawler_instance.start()
+    print("Scraper Engine Started")
+
+    yield
+
+    await crawler_instance.close()
+    print("Scraper Engine Shutdown")
+
 asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 app = FastAPI(title="Resume Matcher API", lifespan=lifespan)
