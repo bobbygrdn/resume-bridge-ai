@@ -70,7 +70,7 @@ async def dashboard(request: Request, user_id: str = "robert_gordon", db: Sessio
     try:
         matches = db.query(MatchRecord).filter(
             MatchRecord.user_id == user_id,
-            MatchRecord.match_score >= 60
+            MatchRecord.match_score >= 50
         ).order_by(MatchRecord.match_score.desc()).all()
 
         identity_label = "Identity Not Yet Indexed"
@@ -202,7 +202,7 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
 
     await log_queue.put(f"📊 Result: {analysis_obj.match_score}% Match.")
 
-    if analysis_obj.match_score >= 60:
+    if analysis_obj.match_score >= 50:
         new_record = MatchRecord(
             user_id=user_id,
             job_title=structured_job.job_title,
