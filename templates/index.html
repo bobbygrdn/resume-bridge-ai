@@ -185,11 +185,11 @@
             consoleLogs.textContent = "> Launching new scout mission...";
 
             try {
+                consoleDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 await fetch(`/hunt-jobs?search_query=${encodeURIComponent(query)}&user_id=${userId}`, { method: 'POST' });
-                consoleLogs.scrollIntoView({ behavior: 'smooth' });
             } finally {
                 setTimeout(() => location.reload(), 2000);
-                resultGrid.scrollIntoView({ behavior: 'smooth' });
+                resultGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
