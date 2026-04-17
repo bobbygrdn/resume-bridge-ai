@@ -52,7 +52,7 @@ extraction_program = LLMTextCompletionProgram.from_defaults(
     llm=OpenAI(model="gpt-4o-mini", temperature=0)
 )
 
-async def process_resume_pdf(text: str, storage_context):
+async def process_resume_pdf(text: str, storage_context, user_id: str):
     """
     1. Extracts structured JSON from raw text.
     2. Creates a LlamaIndex Document with metadata.
@@ -79,7 +79,6 @@ async def process_resume_pdf(text: str, storage_context):
     metadata["user_id"] = user_id
 
     doc = Document(text=text, metadata=metadata)
-
     VectorStoreIndex.from_documents([doc], storage_context=storage_context)
 
     return profile
