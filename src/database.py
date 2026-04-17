@@ -16,6 +16,7 @@ class MatchRecord(Base):
     __tablename__ = "matches"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, index=True)
     job_title = Column(String)
     company_name = Column(String)
     match_score = Column(Integer)
