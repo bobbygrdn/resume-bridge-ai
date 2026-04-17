@@ -58,7 +58,7 @@ async def process_resume_pdf(text: str, storage_context, user_id: str):
                 filter=models.Filter(
                     must=[
                         models.FieldCondition(
-                            key="metadata.user_id",
+                            key="user_id",
                             match=models.MatchValue(value=user_id)
                         )
                     ]
