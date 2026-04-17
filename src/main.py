@@ -131,7 +131,7 @@ def clean_llm_json(raw_text: str) -> str:
     end = raw_text.rfind('}')
     return raw_text[start:end + 1] if start != -1 and end != -1 else raw_text
 
-async def perform_analysis_logic(markdown_content: str, url: str, db: Session, user_id: str):
+async def perform_analysis_logic(markdown_content: str, url: str, db: Session, user_id: str, search_query: str):
     if is_dead_link(markdown_content):
         await log_queue.put(f"👻 Dead Link Detected: {url[:40]}...")
         return None
