@@ -167,13 +167,15 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
     llm = OpenAI(model="gpt-4o")
     prompt = (
         f"ACT AS A SKEPTICAL RECRUITER.\n"
-        f"TARGET LOCATION INTENT: '{search_query}'\n"
+        f"SEARCH INTENT: '{search_query}'\n"
         f"JOB LOCATION: '{structured_job.location}'\n"
         f"CANDIDATE: {my_profile}\n"
         f"JOB: {structured_job.model_dump()}\n\n"
-        "STRICT RULE: If the Target Location intent mentions a city/state (e.g., 'San Diego') "
-        "and this job is in a different city, state, or country, the match_score MUST BE 0. "
-        "The only exception is if the job is explicitly 'Remote'.\n\n"
+        "STRICT GEOGRAPHY RULES:\n"
+        "1. Extract the intended city/state from the SEARCH INTENT (e.g., 'San Diego').\n"
+        "2. If the JOB LOCATION is 'Remote', it is ALWAYS a geographic match.\n"
+        "3. If the JOB LOCATION is in the same metropolitan area (e.g., 'La Jolla' for 'San Diego'), it is a match.\n"
+        "4. If the job is in a completely different region (e.g., 'Gurugram' or 'New York'), match_score MUST be 0.\n\n"
         "JSON OUTPUT ONLY."
     )
     
