@@ -54,6 +54,44 @@
             overflow-y: auto;
             margin-bottom: 2rem;
         }
+
+        .actions {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-view {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .btn-delete {
+            color: #64748b;
+            background: none;
+            border: 1px solid #cbd5e1;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .btn-copy {
+            color: #64748b;
+            background: none;
+            border: 1px solid #cbd5e1;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .btn-copy:hover,
+        .btn-delete:hover {
+            background: #f1f5f9;
+        }
     </style>
 </head>
 
@@ -111,11 +149,16 @@
                 <p style="color:#64748b;">{{ match.company_name }}</p>
                 <p style="font-size:0.9rem; color:#475569;">{{ match.personalized_pitch }}</p>
                 <div style="display:flex; justify-content: space-between; align-items: center; margin-top:1rem;">
-                    <button data-pitch="{{ match.personalized_pitch }}" onclick="copyPitch(this)" class="btn-copy">
-                        📋 Copy Pitch
-                    </button>
-                    <a href="{{ match.url }}" target="_blank"
-                        style="color:var(--primary); text-decoration:none; font-weight:600;">View Job →</a>
+                    <div class="actions">
+                        <button data-pitch="{{ match.personalized_pitch }}" onclick="copyPitch(this)" class="btn-copy">
+                            📋 Copy Pitch
+                        </button>
+                        <form action="/delete-match/{{ match.id }}" method="post" style="display:inline;">
+                            <button type="submit" class="btn-delete" onclick="return confirm('Archive this match?')">🗑️
+                                Remove</button>
+                        </form>
+                    </div>
+                    <a href="{{ match.url }}" target="_blank" class="btn-view">View Job →</a>
                 </div>
             </div>
             {% endfor %}
