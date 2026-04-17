@@ -57,7 +57,9 @@ def is_index_page(url: str, markdown: str) -> bool:
         r"search\?",
         r"/open-positions/?$",
         r"/careers/?$",
-        r"\?error=true"
+        r"\?error=true",
+        r"/apply/?$",
+        r"/form/"
     ]
 
     if any(re.search(p, url, re.IGNORECASE) for p in index_patterns):
@@ -135,7 +137,7 @@ async def hunt_jobs(search_query: str, user_id: str, db: Session = Depends(get_d
 
     await log_queue.put(f"📥 Downloading content for {len(urls_to_process)} new leads...")
 
-    run_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS, wait_until="networkidle")
+    run_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS, wait_until="commit")
     results = await crawler_instance.arun_many(urls=urls_to_process, config=run_config)
 
     for result in results:
