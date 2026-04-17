@@ -75,8 +75,9 @@ async def dashboard(request: Request, user_id: str = "robert_gordon", db: Sessio
     try:
         matches = db.query(MatchRecord).filter(
             MatchRecord.user_id == user_id,
-            MatchRecord.match_score >= 50
-        ).order_by(MatchRecord.match_score.desc()).all()
+            MatchRecord.match_score >= 50,
+            MatchRecord.archived == 0
+        ).order_by(MatchRecord.created_at.desc()).all()
 
         identity_label = "Identity Not Yet Indexed"
         existing_collections = client.get_collections().collections
@@ -229,10 +230,11 @@ async def stream_logs():
             yield f"data: {msg}\n\n"
     return StreamingResponse(log_broadcaster(), media_type="text/event-stream")
 
-@app.post("/delete-match/{match_id}")
-async def delete_match(match_id: int, db: Session = Depends(get_db)):
+@app.post("/archive-match/{match_id}")
+async def archive_match(match_id: int, db: Session = Depends(get_db)):
     record = db.query(MatchRecord).filter(MatchRecord.id == match_id).first()
     if record:
-        db.delete(record)
+        # We need to add an archive flag
+        record.archived = 1
         db.commit()
     return RedirectResponse(url="/", status_code=303)

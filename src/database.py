@@ -20,7 +20,7 @@ class MatchRecord(Base):
     job_title = Column(String)
     company_name = Column(String)
     match_score = Column(Integer)
-
+    archived = Column(Integer, default=0)
     key_alignments = Column(JSON)
     skill_gaps = Column(JSON)
     personalized_pitch = Column(Text)
