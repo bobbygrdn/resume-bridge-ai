@@ -35,7 +35,7 @@ app = FastAPI(title="AI Job Hunter", lifespan=lifespan)
 reader = PyMuPDFReader()
 
 @app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request, user_id: str = "robert_gordon", db: Session = Depends(get_db)): # 🔑 Default user_id
+async def dashboard(request: Request, user_id: str = "robert_gordon", db: Session = Depends(get_db)):
     try:
         matches = db.query(MatchRecord).filter(
             MatchRecord.user_id == user_id,
@@ -81,7 +81,7 @@ async def upload_resume(user_id: str, file: UploadFile = File(...)):
     try:
         documents = reader.load_data(file_path=Path(temp_path))
         raw_text = "\n".join([doc.text for doc in documents])
-        profile = await process_resume_pdf(raw_text, default_storage_context, user_id) # 🔑
+        profile = await process_resume_pdf(raw_text, default_storage_context, user_id)
         return {"message": "Identity indexed", "profile": profile}
     finally:
         if os.path.exists(temp_path): os.remove(temp_path)
@@ -102,7 +102,7 @@ async def hunt_jobs(search_query: str, user_id: str, db: Session = Depends(get_d
     for result in results:
         if result.success:
             try:
-                await perform_analysis_logic(result.markdown, result.url, db, user_id) # 🔑
+                await perform_analysis_logic(result.markdown, result.url, db, user_id)
             except Exception as e: print(f"Error: {e}")
 
     return {"status": "Hunt Complete"}
