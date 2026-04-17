@@ -38,7 +38,7 @@ def is_dead_link(markdown: str) -> bool:
     """Guarding: Detects 404s, expired jobs, and empty pages."""
     dead_signals = [
         "404", "page not found", "job no longer available",
-        "this job has expired", "error 404", "site maintenance"
+        "this job has expired", "error 404", "site maintenance", "The job you are looing for is no longer open."
     ]
 
     content = markdown.lower()
