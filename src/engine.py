@@ -1,4 +1,4 @@
-from qdrant_client import QdrantClient, AsyncQdrantClient
+from qdrant_client import QdrantClient, AsyncQdrantClient, models
 from llama_index.core import StorageContext
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from dotenv import load_dotenv
@@ -59,16 +59,27 @@ async def process_resume_pdf(text: str, storage_context):
     3. Persists the vector to Qdrant.
     """
 
+    client.delete(
+        collection_name="resume_collection",
+        points_selector=models.FilterSelector(
+            filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="metadata.user_id",
+                        match=models.MatchValue(value=user_id)
+                    )
+                ]
+            )
+        )
+    )
+
     profile = extraction_program(text=text)
 
-    doc = Document(
-        text=text,
-        metadata=profile.model_dump()
-    )
+    metadata = profile.model_dump()
+    metadata["user_id"] = user_id
 
-    index = VectorStoreIndex.from_documents(
-        [doc],
-        storage_context=storage_context
-    )
+    doc = Document(text=text, metadata=metadata)
+
+    VectorStoreIndex.from_documents([doc], storage_context=storage_context)
 
     return profile
