@@ -65,7 +65,7 @@ async def process_resume_pdf(text: str, storage_context, user_id: str):
                 )
             )
         )
-        print(f"🧹 Cleared old points for user: {user_id}")
+        await log_queue.put(f"🧹 Cleared old points for user: {user_id}")
 
     profile = extraction_program(text=text)
 
