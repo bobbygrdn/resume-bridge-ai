@@ -47,6 +47,24 @@ def is_dead_link(markdown: str) -> bool:
         return True
     return False
 
+def is_index_page(url: str, markdown: str) -> bool:
+    """🛡️ Directory Guard: Detects job boards/list pages."""
+    index_patterns = [
+        r"\?location=",
+        r"\?department=", 
+        r"\?team=", 
+        r"/jobs/?$", 
+        r"search\?"
+    ]
+
+    if any(re.search(p, url, re.IGNORECASE) for p in index_patterns):
+        return True
+
+    content = markdown.lower()
+    if content.count("apply") > 4 or content.count("view job") > 3:
+        return True
+    return False
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, user_id: str = "robert_gordon", db: Session = Depends(get_db)):
     try:
@@ -135,6 +153,9 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
     if is_dead_link(markdown_content):
         await log_queue.put(f"👻 Dead Link Detected: {url[:40]}...")
         return None
+    if is_index_page(url, markdown_content):
+        await log_queue.put(f"👻 Skipped (Directory Page): {url[:40]}...")
+        return None
 
     try:
         await log_queue.put(f"🧪 Extracting requirements from {url[:30]}...")
@@ -167,18 +188,14 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
     llm = OpenAI(model="gpt-4o")
     prompt = (
         f"ACT AS A SKEPTICAL RECRUITER.\n"
-        f"SEARCH INTENT: '{search_query}'\n"
-        f"JOB LOCATION: '{structured_job.location}'\n"
+        f"INTENT: {search_query}\n"
         f"CANDIDATE: {my_profile}\n"
         f"JOB: {structured_job.model_dump()}\n\n"
-        "STRICT GEOGRAPHY RULES:\n"
-        "1. Extract the intended city/state from the SEARCH INTENT (e.g., 'San Diego').\n"
-        "2. If the JOB LOCATION is 'Remote', it is ALWAYS a geographic match.\n"
-        "3. If the JOB LOCATION is in the same metropolitan area (e.g., 'La Jolla' for 'San Diego'), it is a match.\n"
-        "4. If the job is in a completely different region (e.g., 'Gurugram' or 'New York'), match_score MUST be 0.\n\n"
-        "JSON OUTPUT ONLY."
+        "RULES:\n1. If the job is in a different region than the INTENT, score is 0.\n"
+        "2. Remote jobs are ALWAYS a match for location.\n"
+        "3. Score strictly on skill fit. JSON ONLY."
     )
-    
+
     s_llm = llm.as_structured_llm(MatchAnalysis)
     analysis = await s_llm.acomplete(prompt)
     analysis_obj = MatchAnalysis.model_validate_json(clean_llm_json(analysis.text))
