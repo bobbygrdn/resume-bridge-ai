@@ -50,7 +50,7 @@ async def dashboard(request: Request, user_id: str = "robert_gordon", db: Sessio
             scroll_result = client.scroll(
                 collection_name="resume_collection",
                 scroll_filter=models.Filter(
-                    must=[models.FieldCondition(key="metadata.user_id", match=models.MatchValue(value=user_id))]
+                    must=[models.FieldCondition(key="user_id", match=models.MatchValue(value=user_id))]
                 ),
                 limit=1,
                 with_payload=True
@@ -60,8 +60,8 @@ async def dashboard(request: Request, user_id: str = "robert_gordon", db: Sessio
             if points:
                 payload = points[0].payload
                 metadata = payload.get("metadata", {})
-                name = metadata.get("full_name") or payload.get("full_name", "Anonymous")
-                headline = metadata.get("headline") or payload.get("headline", "No Headline")
+                name = payload.get("full_name", "Anonymous")
+                headline = payload.get("headline", "No Headline")
                 identity_label = f"{name} | {headline}"
 
         return templates.TemplateResponse(
