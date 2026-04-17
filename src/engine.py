@@ -10,26 +10,18 @@ from src.schema import ResumeProfile
 load_dotenv()
 
 client = QdrantClient(url="http://localhost:6333")
-
 aclient = AsyncQdrantClient(url="http://localhost:6333")
 
 def init_storage(collection_name: str = "resume_collection"):
-    """
-    Initializes the Qdrant Vector Store and LlamaIndex Storage Context.
-    This is the 'handshake' between your code and the database.
-    """
     try:
         vector_store = QdrantVectorStore(
             client=client,
             aclient=aclient,
             collection_name=collection_name
         )
-
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
-
         print(f"✅ Successfully connected to Qdrant collection: '{collection_name}'")
         return storage_context
-
     except Exception as e:
         print(f"❌ Connection Failed: {str(e)}")
         raise e
@@ -54,24 +46,26 @@ extraction_program = LLMTextCompletionProgram.from_defaults(
 
 async def process_resume_pdf(text: str, storage_context, user_id: str):
     """
-    1. Extracts structured JSON from raw text.
-    2. Creates a LlamaIndex Document with metadata.
-    3. Persists the vector to Qdrant.
+    1. Checks if the collection exists.
+    2. Deletes only points for the specific user_id.
+    3. Persists the new identity.
     """
-
-    client.delete(
-        collection_name="resume_collection",
-        points_selector=models.FilterSelector(
-            filter=models.Filter(
-                must=[
-                    models.FieldCondition(
-                        key="metadata.user_id",
-                        match=models.MatchValue(value=user_id)
-                    )
-                ]
+    collections = client.get_collections().collections
+    if any(c.name == "resume_collection" for c in collections):
+        client.delete(
+            collection_name="resume_collection",
+            points_selector=models.FilterSelector(
+                filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="metadata.user_id",
+                            match=models.MatchValue(value=user_id)
+                        )
+                    ]
+                )
             )
         )
-    )
+        print(f"🧹 Cleared old points for user: {user_id}")
 
     profile = extraction_program(text=text)
 
@@ -79,6 +73,7 @@ async def process_resume_pdf(text: str, storage_context, user_id: str):
     metadata["user_id"] = user_id
 
     doc = Document(text=text, metadata=metadata)
+    
     VectorStoreIndex.from_documents([doc], storage_context=storage_context)
 
     return profile
