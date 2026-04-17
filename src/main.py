@@ -129,7 +129,7 @@ async def match_job(inquiry: JobInquiry, db: Session = Depends(get_db)):
     if not result.success:
         raise HTTPException(status_code=500, detail="Failed to fetch job posting content.")
 
-    analysis = await perform_analysis_logic(result.markdown, inquiry.target_url, db, inquiry.user_id, "Resume to Job Req Match")
+    analysis = await perform_analysis_logic(result.markdown, inquiry.target_url, db, inquiry.user_id, "Resume to Job Req Match", save_to_db=False)
     if analysis is None:
         raise HTTPException(status_code=404, detail="No valid match analysis could be performed.")
     return analysis
@@ -166,7 +166,7 @@ def clean_llm_json(raw_text: str) -> str:
     end = raw_text.rfind('}')
     return raw_text[start:end + 1] if start != -1 and end != -1 else raw_text
 
-async def perform_analysis_logic(markdown_content: str, url: str, db: Session, user_id: str, search_query: str):
+async def perform_analysis_logic(markdown_content: str, url: str, db: Session, user_id: str, search_query: str, save_to_db=True):
     if is_dead_link(markdown_content):
         await log_queue.put(f"👻 Dead Link Detected: {url[:40]}...")
         return None
@@ -219,7 +219,7 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
 
     await log_queue.put(f"📊 Result: {analysis_obj.match_score}% Match.")
 
-    if analysis_obj.match_score >= 50:
+    if analysis_obj.match_score >= 50 and save_to_db:
         new_record = MatchRecord(
             user_id=user_id,
             job_title=structured_job.job_title,
@@ -247,4 +247,4 @@ async def archive_match(match_id: int, db: Session = Depends(get_db)):
     if record:
         record.archived = True
         db.commit()
-    return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(url="localhost:8000", status_code=303)
