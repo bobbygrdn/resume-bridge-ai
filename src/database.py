@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, Text, JSON, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, Float, Text, JSON, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
@@ -20,7 +20,7 @@ class MatchRecord(Base):
     job_title = Column(String)
     company_name = Column(String)
     match_score = Column(Integer)
-    archived = Column(Integer, default=0)
+    archived = Column(Boolean, default=False)
     key_alignments = Column(JSON)
     skill_gaps = Column(JSON)
     personalized_pitch = Column(Text)

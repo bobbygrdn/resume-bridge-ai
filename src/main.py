@@ -76,7 +76,7 @@ async def dashboard(request: Request, user_id: str = "robert_gordon", db: Sessio
         matches = db.query(MatchRecord).filter(
             MatchRecord.user_id == user_id,
             MatchRecord.match_score >= 50,
-            MatchRecord.archived == 0
+            MatchRecord.archived == False
         ).order_by(MatchRecord.created_at.desc()).all()
 
         identity_label = "Identity Not Yet Indexed"
@@ -234,7 +234,6 @@ async def stream_logs():
 async def archive_match(match_id: int, db: Session = Depends(get_db)):
     record = db.query(MatchRecord).filter(MatchRecord.id == match_id).first()
     if record:
-        # We need to add an archive flag
-        record.archived = 1
+        record.archived = True
         db.commit()
     return RedirectResponse(url="/", status_code=303)
