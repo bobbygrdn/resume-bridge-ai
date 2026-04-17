@@ -131,7 +131,7 @@ async def hunt_jobs(search_query: str, user_id: str, db: Session = Depends(get_d
     urls_to_process = []
     for url in candidate_urls:
         if db.query(MatchRecord).filter(MatchRecord.url == url).first():
-            await log_queue.put(f"⏭️ Skipping (Already in DB): {url[:40]}...")
+            await log_queue.put(f"⏭️ Skipping (Already in DB): {url[:40]}...\n")
         else:
             urls_to_process.append(url)
 
@@ -156,10 +156,10 @@ def clean_llm_json(raw_text: str) -> str:
 
 async def perform_analysis_logic(markdown_content: str, url: str, db: Session, user_id: str, search_query: str):
     if is_dead_link(markdown_content):
-        await log_queue.put(f"👻 Dead Link Detected: {url[:40]}...")
+        await log_queue.put(f"👻 Dead Link Detected: {url[:40]}...\n")
         return None
     if is_index_page(url, markdown_content):
-        await log_queue.put(f"👻 Skipped (Directory Page): {url[:40]}...")
+        await log_queue.put(f"👻 Skipped (Directory Page): {url[:40]}...\n")
         return None
 
     try:
@@ -167,11 +167,11 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
         structured_job = job_extraction_program(text=markdown_content)
 
         if not structured_job.job_title or structured_job.job_title.lower() in ["not listed", "not found"]:
-            await log_queue.put(f"🚫 Content rejected: No job title found.")
+            await log_queue.put(f"🚫 Content rejected: No job title found.\n")
             return None
 
         await log_queue.put(f"🔍 Found: {structured_job.job_title} at {structured_job.company_name}")
-    except Exception: 
+    except Exception:
         return None
 
     scroll_result = client.scroll(
@@ -218,7 +218,7 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
         )
         db.add(new_record)
         db.commit()
-        await log_queue.put(f"✅ High match saved to dashboard!")
+        await log_queue.put(f"✅ High match saved to dashboard!\\n")
     return analysis_obj
 
 @app.get("/stream-logs")
