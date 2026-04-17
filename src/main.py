@@ -120,7 +120,7 @@ async def hunt_jobs(search_query: str, user_id: str, db: Session = Depends(get_d
     for result in results:
         if result.success:
             try:
-                await perform_analysis_logic(result.markdown, result.url, db, user_id)
+                await perform_analysis_logic(result.markdown, result.url, db, user_id, search_query)
             except Exception as e: print(f"Error: {e}")
 
     await log_queue.put("🏁 Hunt Complete.")
@@ -165,7 +165,17 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
 
     from llama_index.llms.openai import OpenAI
     llm = OpenAI(model="gpt-4o")
-    prompt = (f"ACT AS A SKEPTICAL RECRUITER.\nCANDIDATE: {my_profile}\nJOB: {structured_job.model_dump()}\nJSON OUTPUT ONLY.")
+    prompt = (
+        f"ACT AS A SKEPTICAL RECRUITER.\n"
+        f"TARGET LOCATION INTENT: '{search_query}'\n"
+        f"JOB LOCATION: '{structured_job.location}'\n"
+        f"CANDIDATE: {my_profile}\n"
+        f"JOB: {structured_job.model_dump()}\n\n"
+        "STRICT RULE: If the Target Location intent mentions a city/state (e.g., 'San Diego') "
+        "and this job is in a different city, state, or country, the match_score MUST BE 0. "
+        "The only exception is if the job is explicitly 'Remote'.\n\n"
+        "JSON OUTPUT ONLY."
+    )
     
     s_llm = llm.as_structured_llm(MatchAnalysis)
     analysis = await s_llm.acomplete(prompt)
