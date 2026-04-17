@@ -34,6 +34,19 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="AI Job Hunter", lifespan=lifespan)
 reader = PyMuPDFReader()
 
+def is_dead_link(markdown: str) -> bool:
+    """Guarding: Detects 404s, expired jobs, and empty pages."""
+    dead_signals = [
+        "404", "page not found", "job no longer available",
+        "this job has expired", "error 404", "site maintenance"
+    ]
+
+    content = markdown.lower()
+
+    if any(signal in content for signal in dead_signals) or len(content) < 300:
+        return True
+    return False
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, user_id: str = "robert_gordon", db: Session = Depends(get_db)):
     try:
@@ -91,10 +104,15 @@ async def hunt_jobs(search_query: str, user_id: str, db: Session = Depends(get_d
     await log_queue.put(f"Starting hunt for {user_id}: {search_query}")
     candidate_urls = find_job_urls(search_query, max_results=10)
     
-    urls_to_process = [
-        url for url in candidate_urls 
-        if not db.query(MatchRecord).filter(MatchRecord.url == url).first()
-    ]
+    await log_queue.put(f"📡 Scout found {len(candidate_urls)} total leads.")
+    urls_to_process = []
+    for url in candidate_urls:
+        if db.query(MatchRecord).filter(MatchRecord.url == url).first():
+            await log_queue.put(f"⏭️ Skipping (Already in DB): {url[:40]}...")
+        else:
+            urls_to_process.append(url)
+
+    await log_queue.put(f"📥 Downloading content for {len(urls_to_process)} new leads...")
 
     run_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS, wait_until="networkidle")
     results = await crawler_instance.arun_many(urls=urls_to_process, config=run_config)
@@ -105,6 +123,7 @@ async def hunt_jobs(search_query: str, user_id: str, db: Session = Depends(get_d
                 await perform_analysis_logic(result.markdown, result.url, db, user_id)
             except Exception as e: print(f"Error: {e}")
 
+    await log_queue.put("🏁 Hunt Complete.")
     return {"status": "Hunt Complete"}
 
 def clean_llm_json(raw_text: str) -> str:
@@ -113,22 +132,36 @@ def clean_llm_json(raw_text: str) -> str:
     return raw_text[start:end + 1] if start != -1 and end != -1 else raw_text
 
 async def perform_analysis_logic(markdown_content: str, url: str, db: Session, user_id: str):
+    if is_dead_link(markdown_content):
+        await log_queue.put(f"👻 Dead Link Detected: {url[:40]}...")
+        return None
+
     try:
+        await log_queue.put(f"🧪 Extracting requirements from {url[:30]}...")
         structured_job = job_extraction_program(text=markdown_content)
+
         if not structured_job.job_title or structured_job.job_title.lower() in ["not listed", "not found"]:
+            await log_queue.put(f"🚫 Content rejected: No job title found.")
             return None
-    except Exception: return None
+
+        await log_queue.put(f"🔍 Found: {structured_job.job_title} at {structured_job.company_name}")
+    except Exception: 
+        return None
 
     scroll_result = client.scroll(
         collection_name="resume_collection",
         scroll_filter=models.Filter(
-            must=[models.FieldCondition(key="metadata.user_id", match=models.MatchValue(value=user_id))]
+            must=[models.FieldCondition(key="user_id", match=models.MatchValue(value=user_id))]
         ),
         limit=1, with_payload=True
     )
 
-    if not scroll_result[0]: return None
+    if not scroll_result[0]:
+        await log_queue.put(f"⚠️ Error: No profile found for {user_id}. Please upload resume.")
+        return None
+
     my_profile = scroll_result[0][0].payload
+    await log_queue.put(f"🧠 Scoring match against {user_id}'s skills...")
 
     from llama_index.llms.openai import OpenAI
     llm = OpenAI(model="gpt-4o")
@@ -137,6 +170,8 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
     s_llm = llm.as_structured_llm(MatchAnalysis)
     analysis = await s_llm.acomplete(prompt)
     analysis_obj = MatchAnalysis.model_validate_json(clean_llm_json(analysis.text))
+
+    await log_queue.put(f"📊 Result: {analysis_obj.match_score}% Match.")
 
     if analysis_obj.match_score >= 60:
         new_record = MatchRecord(
@@ -149,6 +184,7 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
         )
         db.add(new_record)
         db.commit()
+        await log_queue.put(f"✅ High match saved to dashboard!")
     return analysis_obj
 
 @app.get("/stream-logs")
