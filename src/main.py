@@ -123,6 +123,17 @@ async def upload_resume(user_id: str, file: UploadFile = File(...)):
     finally:
         if os.path.exists(temp_path): os.remove(temp_path)
 
+@app.post("/match-job", response_model=MatchAnalysis)
+async def match_job(inquiry: JobInquiry, db: Session = Depends(get_db)):
+    result = await crawler_instance.arun(url=inquiry.target_url, config=CrawlerRunConfig(cache_mode=CacheMode.BYPASS, wait_until="networkidle"))
+    if not result.success:
+        raise HTTPException(status_code=500, detail="Failed to fetch job posting content.")
+
+    analysis = await perform_analysis_logic(result.markdown, inquiry.target_url, db, inquiry.user_id, "Resume to Job Req Match")
+    if analysis is None:
+        raise HTTPException(status_code=404, detail="No valid match analysis could be performed.")
+    return analysis
+
 @app.post("/hunt-jobs")
 async def hunt_jobs(search_query: str, user_id: str, db: Session = Depends(get_db)):
     await log_queue.put(f"Starting hunt for {user_id}: {search_query}")
