@@ -157,18 +157,18 @@ def clean_llm_json(raw_text: str) -> str:
 
 async def perform_analysis_logic(markdown_content: str, url: str, db: Session, user_id: str, search_query: str):
     if is_dead_link(markdown_content):
-        await log_queue.put(f"👻 Dead Link Detected: {url[:40]}...\\n")
+        await log_queue.put(f"👻 Dead Link Detected: {url[:40]}...")
         return None
     if is_index_page(url, markdown_content):
-        await log_queue.put(f"👻 Skipped (Directory Page): {url[:40]}...\\n")
+        await log_queue.put(f"👻 Skipped (Directory Page): {url[:40]}...")
         return None
 
     try:
-        await log_queue.put(f"🧪 Extracting requirements from {url[:30]}...\\n")
+        await log_queue.put(f"🧪 Extracting requirements from {url[:30]}...")
         structured_job = job_extraction_program(text=markdown_content)
 
         if not structured_job.job_title or structured_job.job_title.lower() in ["not listed", "not found"]:
-            await log_queue.put(f"🚫 Content rejected: No job title found.\\n")
+            await log_queue.put(f"🚫 Content rejected: No job title found.")
             return None
 
         await log_queue.put(f"🔍 Found: {structured_job.job_title} at {structured_job.company_name}")
@@ -184,11 +184,11 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
     )
 
     if not scroll_result[0]:
-        await log_queue.put(f"⚠️ Error: No profile found for {user_id}. Please upload resume.\\n")
+        await log_queue.put(f"⚠️ Error: No profile found for {user_id}. Please upload resume.")
         return None
 
     my_profile = scroll_result[0][0].payload
-    await log_queue.put(f"🧠 Scoring match against {user_id}'s skills...\\n")
+    await log_queue.put(f"🧠 Scoring match against {user_id}'s skills...")
 
     from llama_index.llms.openai import OpenAI
     llm = OpenAI(model="gpt-4o")
@@ -206,7 +206,7 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
     analysis = await s_llm.acomplete(prompt)
     analysis_obj = MatchAnalysis.model_validate_json(clean_llm_json(analysis.text))
 
-    await log_queue.put(f"📊 Result: {analysis_obj.match_score}% Match.\\n")
+    await log_queue.put(f"📊 Result: {analysis_obj.match_score}% Match.")
 
     if analysis_obj.match_score >= 50:
         new_record = MatchRecord(
@@ -219,7 +219,7 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
         )
         db.add(new_record)
         db.commit()
-        await log_queue.put(f"✅ High match saved to dashboard!\\n")
+        await log_queue.put(f"✅ High match saved to dashboard!")
     return analysis_obj
 
 @app.get("/stream-logs")
