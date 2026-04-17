@@ -6,6 +6,7 @@ from llama_index.core.program import LLMTextCompletionProgram
 from llama_index.llms.openai import OpenAI
 from llama_index.core import Document, VectorStoreIndex
 from src.schema import ResumeProfile
+from src.logging_utils import log_queue
 
 load_dotenv()
 

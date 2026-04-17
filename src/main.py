@@ -8,6 +8,7 @@ from src.scraper import job_extraction_program
 from src.schema import MatchAnalysis, JobInquiry
 from src.database import get_db, MatchRecord
 from src.search_provider import find_job_urls
+from src.logging_utils import log_queue
 from sqlalchemy.orm import Session
 from llama_index.readers.file import PyMuPDFReader
 import shutil
@@ -17,7 +18,6 @@ import asyncio
 import re
 
 crawler_instance = None
-log_queue = asyncio.Queue()
 templates = Jinja2Templates(directory="templates")
 
 @asynccontextmanager
