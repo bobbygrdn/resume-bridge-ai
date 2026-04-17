@@ -113,7 +113,8 @@
         <div class="card">
             <h2>Scout Configuration</h2>
             <div style="display: flex; gap: 1rem;">
-                <input type="text" id="searchQuery" placeholder="e.g. Junior AI Engineer San Diego"
+                <input onkeypress="if(event.key === 'Enter' && this.value.trim() !== '') { startHunt(); }" type="text"
+                    id="searchQuery" placeholder="e.g. Junior AI Engineer San Diego"
                     style="flex: 1; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
                 <button onclick="startHunt()"
                     style="background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600;">Find
@@ -188,7 +189,7 @@
                 consoleDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 await fetch(`/hunt-jobs?search_query=${encodeURIComponent(query)}&user_id=${userId}`, { method: 'POST' });
             } finally {
-                setTimeout(() => location.reload(), 2000);
+                setTimeout(() => location.reload(), 1000);
                 resultGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
