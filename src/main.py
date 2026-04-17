@@ -51,10 +51,13 @@ def is_index_page(url: str, markdown: str) -> bool:
     """🛡️ Directory Guard: Detects job boards/list pages."""
     index_patterns = [
         r"\?location=",
-        r"\?department=", 
-        r"\?team=", 
-        r"/jobs/?$", 
-        r"search\?"
+        r"\?department=",
+        r"\?team=",
+        r"/jobs/?$",
+        r"search\?",
+        r"/open-positions/?$",
+        r"/careers/?$",
+        r"\?error=true"
     ]
 
     if any(re.search(p, url, re.IGNORECASE) for p in index_patterns):
