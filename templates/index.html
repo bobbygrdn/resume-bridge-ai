@@ -175,6 +175,10 @@
             const div = document.createElement('div');
             div.textContent = `> ${e.data}`;
             consoleLogs.appendChild(div);
+
+            const spacer = document.createElement('div');
+            spacer.textContent = ">";
+            consoleLogs.appendChild(spacer);
             consoleDiv.scrollTop = consoleDiv.scrollHeight;
         };
 
