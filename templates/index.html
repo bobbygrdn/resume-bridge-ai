@@ -167,18 +167,30 @@
 
     <script>
         const consoleLogs = document.getElementById('logs');
+        const consoleDiv = document.getElementById('console');
         const eventSource = new EventSource('/stream-logs');
+        const resultGrid = document.querySelector('.grid');
         eventSource.onmessage = (e) => {
-            const div = document.createElement('div'); div.textContent = `> ${e.data}`;
+            const div = document.createElement('div');
+            div.textContent = `> ${e.data}`;
             consoleLogs.appendChild(div);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
         };
 
         async function startHunt() {
             const query = document.getElementById('searchQuery').value;
-            const userId = document.getElementById('userPassport').value; // 🔑 Pulls passport ID
+            const userId = document.getElementById('userPassport').value;
             if (!query) return;
-            await fetch(`/hunt-jobs?search_query=${encodeURIComponent(query)}&user_id=${userId}`, { method: 'POST' });
-            setTimeout(() => location.reload(), 2000);
+
+            consoleLogs.textContent = "> Launching new scout mission...";
+
+            try {
+                await fetch(`/hunt-jobs?search_query=${encodeURIComponent(query)}&user_id=${userId}`, { method: 'POST' });
+                consoleLogs.scrollIntoView({ behavior: 'smooth' });
+            } finally {
+                setTimeout(() => location.reload(), 2000);
+                resultGrid.scrollIntoView({ behavior: 'smooth' });
+            }
         }
 
         async function uploadResume() {
