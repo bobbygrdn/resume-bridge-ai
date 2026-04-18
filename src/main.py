@@ -129,7 +129,9 @@ async def match_job(inquiry: JobInquiry, db: Session = Depends(get_db)):
     if not result.success:
         raise HTTPException(status_code=500, detail="Failed to fetch job posting content.")
 
-    analysis = await perform_analysis_logic(result.markdown, inquiry.target_url, db, inquiry.user_id, "Resume to Job Req Match", save_to_db=False)
+    analysis = await perform_analysis_logic(
+        result.markdown, inquiry.target_url, db, inquiry.user_id, "Resume to Job Req Match", save_to_db=False, log_to_queue=False
+    )
     if analysis is None:
         raise HTTPException(status_code=404, detail="No valid match analysis could be performed.")
     return analysis
@@ -166,23 +168,28 @@ def clean_llm_json(raw_text: str) -> str:
     end = raw_text.rfind('}')
     return raw_text[start:end + 1] if start != -1 and end != -1 else raw_text
 
-async def perform_analysis_logic(markdown_content: str, url: str, db: Session, user_id: str, search_query: str, save_to_db=True):
+async def perform_analysis_logic(markdown_content: str, url: str, db: Session, user_id: str, search_query: str, save_to_db=True, log_to_queue=True):
     if is_dead_link(markdown_content):
-        await log_queue.put(f"👻 Dead Link Detected: {url[:40]}...")
+        if log_to_queue:
+            await log_queue.put(f"👻 Dead Link Detected: {url[:40]}...")
         return None
     if is_index_page(url, markdown_content):
-        await log_queue.put(f"👻 Skipped (Directory Page): {url[:40]}...")
+        if log_to_queue:
+            await log_queue.put(f"👻 Skipped (Directory Page): {url[:40]}...")
         return None
 
     try:
-        await log_queue.put(f"🧪 Extracting requirements from {url[:30]}...")
+        if log_to_queue:
+            await log_queue.put(f"🧪 Extracting requirements from {url[:30]}...")
         structured_job = job_extraction_program(text=markdown_content)
 
         if not structured_job.job_title or structured_job.job_title.lower() in ["not listed", "not found"]:
-            await log_queue.put(f"🚫 Content rejected: No job title found.")
+            if log_to_queue:
+                await log_queue.put(f"🚫 Content rejected: No job title found.")
             return None
 
-        await log_queue.put(f"🔍 Found: {structured_job.job_title} at {structured_job.company_name}")
+        if log_to_queue:
+            await log_queue.put(f"🔍 Found: {structured_job.job_title} at {structured_job.company_name}")
     except Exception:
         return None
 
@@ -195,11 +202,13 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
     )
 
     if not scroll_result[0]:
-        await log_queue.put(f"⚠️ Error: No profile found for {user_id}. Please upload resume.")
+        if log_to_queue:
+            await log_queue.put(f"⚠️ Error: No profile found for {user_id}. Please upload resume.")
         return None
 
     my_profile = scroll_result[0][0].payload
-    await log_queue.put(f"🧠 Scoring match against {user_id}'s skills...")
+    if log_to_queue:
+        await log_queue.put(f"🧠 Scoring match against {user_id}'s skills...")
 
     from llama_index.llms.openai import OpenAI
     llm = OpenAI(model="gpt-4o")
@@ -217,7 +226,8 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
     analysis = await s_llm.acomplete(prompt)
     analysis_obj = MatchAnalysis.model_validate_json(clean_llm_json(analysis.text))
 
-    await log_queue.put(f"📊 Result: {analysis_obj.match_score}% Match.")
+    if log_to_queue:
+        await log_queue.put(f"📊 Result: {analysis_obj.match_score}% Match.")
 
     if analysis_obj.match_score >= 50 and save_to_db:
         new_record = MatchRecord(
@@ -230,7 +240,8 @@ async def perform_analysis_logic(markdown_content: str, url: str, db: Session, u
         )
         db.add(new_record)
         db.commit()
-        await log_queue.put(f"✅ High match saved to dashboard!")
+        if log_to_queue:
+            await log_queue.put(f"✅ High match saved to dashboard!")
     return analysis_obj
 
 @app.get("/stream-logs")
