@@ -56,7 +56,6 @@ humanize==4.15.0
 hyperframe==6.1.0
 idna==3.11
 importlib_metadata==9.0.0
-Jinja2==3.1.6
 jiter==0.14.0
 joblib==1.5.3
 jsonschema==4.26.0
@@ -71,7 +70,6 @@ llama-index-vector-stores-qdrant==0.10.0
 llama-index-workflows==2.19.0
 lxml==5.4.0
 markdown-it-py==4.0.0
-MarkupSafe==3.0.3
 marshmallow==3.26.2
 mdurl==0.1.2
 multidict==6.7.1
