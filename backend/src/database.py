@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
-SQLALCHEMY_DATABASE_URL = "sqlite:////app/job_hunter.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:////app/dbdata/job_hunter.db"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
