@@ -2,10 +2,12 @@ version: '3.8'
 
 services:
   api:
-    build: .
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: resume-bridge-api
     env_file:
-      - .env
+      - ./backend/.env
     ports:
       - "8000:8000"
     volumes:
