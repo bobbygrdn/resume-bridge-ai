@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   api:
     build:
@@ -11,9 +9,9 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./tempData:/app/tempData
-      - ./storage:/app/storage
-      - job_hunter_db:/app/job_hunter.db
+      - tempData:/app/tempData
+      - storage:/app/storage
+      - ./job_hunter.db:/app/job_hunter.db
     depends_on:
       - qdrant
     restart: unless-stopped
@@ -25,8 +23,10 @@ services:
       - "6333:6333"
       - "6334:6334"
     volumes:
-      - ./qdrant_data:/qdrant/storage
+      - qdrant_data:/qdrant/storage
     restart: unless-stopped
 
 volumes:
-  job_hunter_db:
+  tempData:
+  storage:
+  qdrant_data:
