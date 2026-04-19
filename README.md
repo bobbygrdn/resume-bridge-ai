@@ -3,6 +3,7 @@
 A FastAPI-based backend for resume/job matching using LLM-powered extraction and analysis, with Qdrant as the vector database and SQLite for match records.
 
 ## Features
+
 - Upload resumes and extract structured profiles
 - Store and search profiles using Qdrant vector DB
 - Analyze job postings and match them to uploaded resumes
@@ -31,6 +32,7 @@ A FastAPI-based backend for resume/job matching using LLM-powered extraction and
    - Qdrant UI: [http://localhost:6333](http://localhost:6333)
 
 ## Project Structure
+
 - `src/` - FastAPI app and business logic
 - `agents/` - Modular LLM agent classes
 - `tempData/` - Temporary storage for uploaded files (not committed)
@@ -39,11 +41,14 @@ A FastAPI-based backend for resume/job matching using LLM-powered extraction and
 - `job_hunter.db` - SQLite database (persisted via Docker volume)
 
 ## Environment Variables
+
 - `OPENAI_API_KEY` (required): Your OpenAI API key for LLM-powered features
 
 ## Development
+
 - For local development, you can run the app with `python run.py` (requires Python 3.12+ and dependencies from `requirements.txt`).
 - Use Docker Compose for production or easy onboarding.
 
 ## License
+
 MIT
