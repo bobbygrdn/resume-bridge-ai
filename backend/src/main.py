@@ -4,7 +4,7 @@ import os
 import asyncio
 from crawl4ai import AsyncWebCrawler, BrowserConfig
 
-from src.routes import resume, job, archive
+from src.routes import resume, job, archive, match
 
 crawler_instance = None
 
@@ -27,6 +27,7 @@ app = FastAPI(title="AI Job Hunter", lifespan=lifespan)
 app.include_router(resume.router)
 app.include_router(job.router)
 app.include_router(archive.router)
+app.include_router(match.router)
 
 @app.get("/")
 async def root():
