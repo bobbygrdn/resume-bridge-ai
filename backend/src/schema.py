@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, HttpUrl
 from typing import List, Optional
-from datetime import date
+from datetime import datetime, date
 
 # Certifications Class to represent professional certifications in the resume
 class Certification(BaseModel):
@@ -59,3 +59,20 @@ class JobPosting(BaseModel):
     requirements: List[str] = Field(description="Core responsibilities or must-have experience")
     is_technical: bool = Field(description="Whether this is a software, AI, or data role")
     salary_range: Optional[str] = "Not Listed"
+
+# MatchRecordOut Class to represent the output model for match records retrieved from the database
+class MatchRecordOut(BaseModel):
+    id: int
+    user_id: str
+    job_title: str
+    company_name: str
+    match_score: int
+    archived: bool
+    key_alignments: List[str]
+    skill_gaps: List[str]
+    personalized_pitch: str
+    url: Optional[str]
+    created_at: datetime
+
+    class Config:
+        orm_mode = True

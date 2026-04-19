@@ -4,7 +4,7 @@ import os
 import asyncio
 from crawl4ai import AsyncWebCrawler, BrowserConfig
 
-from src.routes import resume, job, archive, match
+from src.routes import resume, job, archive, match, matches
 
 crawler_instance = None
 
@@ -28,6 +28,7 @@ app.include_router(resume.router)
 app.include_router(job.router)
 app.include_router(archive.router)
 app.include_router(match.router)
+app.include_router(matches.router)
 
 @app.get("/")
 async def root():
