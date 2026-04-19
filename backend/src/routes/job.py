@@ -7,6 +7,8 @@ from src.logging_utils import log_queue
 from crawl4ai import CrawlerRunConfig, CacheMode
 from src.services import analyze_job_match
 
+router = APIRouter()
+
 @router.post("/hunt-jobs")
 async def hunt_jobs(search_query: str, user_id: str, db: Session = Depends(get_db)):
 
