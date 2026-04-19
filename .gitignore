@@ -2,5 +2,7 @@ venv
 .env
 __pycache__/
 .vscode/
-*.db
+tempData/
 qdrant_data/
+storage/
+job_hunter.db
