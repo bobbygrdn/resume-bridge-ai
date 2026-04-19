@@ -13,7 +13,8 @@ services:
       - storage:/app/storage
       - job_hunter_db:/app/dbdata
     depends_on:
-      - qdrant
+      qdrant:
+        condition: service_healthy
     restart: unless-stopped
 
   qdrant:
@@ -25,6 +26,11 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/collections"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
   tempData:

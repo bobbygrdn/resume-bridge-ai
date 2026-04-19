@@ -9,8 +9,8 @@ from src.logging_utils import log_queue
 
 load_dotenv()
 
-client = QdrantClient(url="http://localhost:6333")
-aclient = AsyncQdrantClient(url="http://localhost:6333")
+client = QdrantClient(url="http://qdrant:6333")
+aclient = AsyncQdrantClient(url="http://qdrant:6333")
 
 def init_storage(collection_name: str = "resume_collection"):
     try:
