@@ -9,7 +9,7 @@ from agents.match_scoring_agent import MatchScoringAgent
 from src.engine import default_storage_context, client, models
 from src.schema import MatchAnalysis
 from src.database import MatchRecord
-from src.utils import clean_llm_json
+from src.utils import clean_llm_json, is_dead_link, is_index_page
 from src.logging_utils import log_queue
 from pathlib import Path
 import os
@@ -59,7 +59,6 @@ async def extract_job_details(markdown_content: str):
     return await job_extraction_agent.run(markdown_content)
 
 async def analyze_job_match(markdown_content: str, url: str, db, user_id: str, search_query: str, save_to_db=True, log_to_queue=True):
-    from src.utils import is_dead_link, is_index_page
     if is_dead_link(markdown_content):
         if log_to_queue:
             await log_queue.put(f"👻 Dead Link Detected: {url[:40]}...")
