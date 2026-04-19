@@ -2,8 +2,6 @@ import asyncio
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from src.schema import JobPosting
 
-# LLM logic removed; now handled by agents and service layer
-
 async def scrape_job_listing(url: str):
     browser_config = BrowserConfig(headless=True, verbose=True)
     run_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS)

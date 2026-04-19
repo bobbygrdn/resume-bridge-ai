@@ -2,6 +2,7 @@
 Service layer for orchestrating agent calls and business logic.
 Each function here coordinates between routers, agents, and persistence.
 """
+from llama_index.core import Document
 from agents.resume_agent import ResumeAgent
 from agents.job_extraction_agent import JobExtractionAgent
 from agents.match_scoring_agent import MatchScoringAgent
@@ -18,11 +19,41 @@ job_extraction_agent = JobExtractionAgent()
 match_scoring_agent = MatchScoringAgent()
 
 async def process_resume_upload(file_path: str, user_id: str):
-    # Use ResumeAgent to extract profile
-    result = await resume_agent.run(file_path, user_id)
-    # Persist to Qdrant (if needed, can be moved here)
-    # ...existing code for persistence if needed...
-    return result
+    profile = await resume_agent.run(file_path, user_id)
+
+    collections = client.get_collections().collections
+    if any(c.name == "resume_collection" for c in collections):
+        client.delete(
+            collection_name="resume_collection",
+            points_selector=models.FilterSelector(
+                filter=models.Filter(
+                    must=[models.FieldCondition(key="user_id", match=models.MatchValue(value=user_id))]
+                )
+            )
+        )
+
+    doc = Document(
+        text=profile['profile'].summary,
+        metadata={
+            "user_id": user_id,
+            "full_name": profile['profile'].full_name,
+            "headline": profile['profile'].headline,
+            "email": profile['profile'].email,
+            "github_url": str(profile['profile'].github_url) if profile['profile'].github_url else None,
+            "portfolio_url": str(profile['profile'].portfolio_url) if profile['profile'].portfolio_url else None,
+            "target_roles": profile['profile'].target_roles,
+            "skills": profile['profile'].skills,
+            "certifications": [c.model_dump() for c in profile['profile'].certifications],
+            "experience": [e.model_dump() for e in profile['profile'].experience],
+            "education": [e.model_dump() for e in profile['profile'].education],
+        }
+    )
+    if default_storage_context is not None:
+        from llama_index.core import VectorStoreIndex
+        index = VectorStoreIndex.from_documents([doc], storage_context=default_storage_context)
+        index.storage_context.persist()
+
+    return profile
 
 async def extract_job_details(markdown_content: str):
     return await job_extraction_agent.run(markdown_content)
