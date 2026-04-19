@@ -32,9 +32,9 @@ export default function JobListingHunter() {
   };
 
   return (
-    <div>
-      <h2 className="text-2xl font-semibold mb-4">Job Listing Hunter</h2>
-      <form onSubmit={handleSubmit} className="mb-4 flex gap-2">
+    <div className="flex flex-col gap-6">
+      <h2 className="text-2xl font-semibold">Job Listing Hunter</h2>
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
         <input
           type="text"
           className="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
@@ -57,13 +57,19 @@ export default function JobListingHunter() {
           <p className="text-gray-600 dark:text-gray-300">Enter a search to find jobs.</p>
         )}
         {!error && results.length > 0 && (
-          <ul className="divide-y divide-gray-300 dark:divide-gray-600">
+          <div className="flex flex-col gap-2">
             {results.map((url, i) => (
-              <li key={url + i} className="py-2">
-                <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-700 dark:text-blue-300 underline break-all">{url}</a>
-              </li>
+              <a
+                key={url + i}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block px-4 py-2 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition break-all"
+              >
+                {url}
+              </a>
             ))}
-          </ul>
+          </div>
         )}
       </div>
     </div>
