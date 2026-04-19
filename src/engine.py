@@ -2,8 +2,7 @@ from qdrant_client import QdrantClient, AsyncQdrantClient, models
 from llama_index.core import StorageContext
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from dotenv import load_dotenv
-from llama_index.core.program import LLMTextCompletionProgram
-from llama_index.llms.openai import OpenAI
+
 from llama_index.core import Document, VectorStoreIndex
 from src.schema import ResumeProfile
 from src.logging_utils import log_queue
@@ -32,18 +31,7 @@ try:
 except Exception:
     default_storage_context = None
 
-extraction_program = LLMTextCompletionProgram.from_defaults(
-    output_cls=ResumeProfile,
-    prompt_template_str=(
-        "You are an expert technical recruiter. Extract professional information "
-        "from the following resume text. Create a compelling 'headline' that "
-        "summarizes their expertise and intent.\n\n"
-        "CRITICAL: The 'headline' MUST be under 60 characters total. "
-        "Be concise (e.g., 'Senior AI Engineer').\n\n"
-        "RESUME TEXT:\n{text}"
-    ),
-    llm=OpenAI(model="gpt-4o-mini", temperature=0)
-)
+
 
 async def process_resume_pdf(text: str, storage_context, user_id: str):
     """
