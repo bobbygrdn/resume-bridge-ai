@@ -1,7 +1,9 @@
 # Dockerfile for Resume Bridge AI FastAPI app
 FROM python:3.12-slim
 
-# Set work directory
+
+# Set work directory and ensure it exists and is writable
+RUN mkdir -p /app && chmod 777 /app
 WORKDIR /app
 
 # Install system dependencies

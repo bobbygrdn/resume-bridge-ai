@@ -11,7 +11,7 @@ services:
     volumes:
       - tempData:/app/tempData
       - storage:/app/storage
-      - ./job_hunter.db:/app/job_hunter.db
+      - job_hunter_db:/app/job_hunter.db
     depends_on:
       - qdrant
     restart: unless-stopped
@@ -30,3 +30,4 @@ volumes:
   tempData:
   storage:
   qdrant_data:
+  job_hunter_db:
