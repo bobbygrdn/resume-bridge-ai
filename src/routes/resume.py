@@ -6,7 +6,7 @@ router = APIRouter()
 
 @router.post("/upload_resume")
 async def upload_resume(user_id: str, file: UploadFile = File(...)):
-    temp_path = f"data/{file.filename}"
+    temp_path = f"tempData/{file.filename}"
     with open(temp_path, "wb") as buffer:
         buffer.write(await file.read())
     try:
