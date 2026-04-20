@@ -22,61 +22,70 @@ export default function JobMatcher() {
     try {
       const data = await matchJob(url, "default_user");
       setResult(data);
-    } catch (err: any) {
-      setError(err.message || "Match failed");
+    } catch (err: unknown) {
+      setError((err as Error).message || "Match failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <h2 className="text-2xl font-semibold">Job Matcher</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
-        <input
-          type="url"
-          className="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          placeholder="Paste a job posting URL"
-          value={url}
-          onChange={e => setUrl(e.target.value)}
-          required
-        />
-        <button
-          type="submit"
-          className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50"
-          disabled={loading || !url}
-        >
-          {loading ? "Matching..." : "Match Job"}
-        </button>
-      </form>
-      <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow min-h-[120px]">
-        {error && <p className="text-red-600 dark:text-red-400">{error}</p>}
-        {result && (
-          <div className="space-y-4">
-            <div>
-              <span className="font-semibold">Match Score:</span> <span className="text-blue-700 dark:text-blue-300">{result.match_score}%</span>
-            </div>
-            <div>
-              <span className="font-semibold">Key Alignments:</span>
-              <ul className="list-disc ml-6 text-green-700 dark:text-green-400">
-                {result.key_alignments.map((item, i) => <li key={i}>{item}</li>)}
-              </ul>
-            </div>
-            <div>
-              <span className="font-semibold">Skill Gaps:</span>
-              <ul className="list-disc ml-6 text-red-700 dark:text-red-400">
-                {result.skill_gaps.map((item, i) => <li key={i}>{item}</li>)}
-              </ul>
-            </div>
-            <div>
-              <span className="font-semibold">Personalized Pitch:</span>
-              <p className="italic text-gray-800 dark:text-gray-200">{result.personalized_pitch}</p>
-            </div>
+    <div className="d-flex flex-column align-items-center justify-content-center min-vh-60">
+      <div className="card w-100">
+        <h2 className="h3 mb-4">Job Matcher</h2>
+        <form onSubmit={handleSubmit} className="row g-3 align-items-end">
+          <div className="col flex-grow-1">
+            <input
+              type="url"
+              className="form-control"
+              placeholder="Paste a job posting URL"
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              required
+            />
           </div>
-        )}
-        {!result && !error && !loading && (
-          <p className="text-gray-600 dark:text-gray-300">Paste a job URL and click Match to see your fit.</p>
-        )}
+          <div className="col-auto">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading || !url}
+            >
+              {loading ? "Matching..." : "Match Job"}
+            </button>
+          </div>
+        </form>
+        <div className="mt-4 p-3 rounded border" style={{ minHeight: 120, background: 'var(--bg-surface-hover)', color: 'var(--text-muted)' }}>
+          {error && <p className="text-danger mb-0">{error}</p>}
+          {result && (
+            <div className="d-flex flex-column gap-3">
+              <div>
+                <span className="fw-semibold">Match Score:</span>{' '}
+                <span className="text-primary fw-semibold">{result.match_score}%</span>
+              </div>
+              <div>
+                <span className="fw-semibold">Key Alignments:</span>
+                <ul className="ms-3 text-success">
+                  {result.key_alignments.map((item, i) => <li key={i}>{item}</li>)}
+                </ul>
+              </div>
+              <div>
+                <span className="fw-semibold">Skill Gaps:</span>
+                <ul className="ms-3 text-danger">
+                  {result.skill_gaps.map((item, i) => <li key={i}>{item}</li>)}
+                </ul>
+              </div>
+              <div>
+                <span className="fw-semibold">Personalized Pitch:</span>
+                <p className="fst-italic text-body">{result.personalized_pitch}</p>
+              </div>
+            </div>
+          )}
+          {!result && !error && !loading && (
+            <p className="text-muted mb-0">
+              Paste a job URL and click Match to see your fit.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

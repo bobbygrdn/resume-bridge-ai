@@ -24,30 +24,34 @@ export default function ProfileCreation() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <h2 className="text-2xl font-semibold">Profile Creation</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <label className="block">
-          <span className="text-gray-700 dark:text-gray-200">Upload Resume (PDF, DOCX, etc.)</span>
-          <input
-            type="file"
-            accept=".pdf,.doc,.docx,.txt,.rtf"
-            className="mt-1 block w-full text-gray-900 dark:text-gray-100"
-            onChange={e => setFile(e.target.files?.[0] || null)}
-            required
-          />
-        </label>
-        <button
-          type="submit"
-          className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50"
-          disabled={loading || !file}
-        >
-          {loading ? "Uploading..." : "Upload Resume"}
-        </button>
-      </form>
-      <div className="min-h-[40px]">
-        {status && <p className="text-green-700 dark:text-green-400">{status}</p>}
-        {error && <p className="text-red-600 dark:text-red-400">{error}</p>}
+    <div className="d-flex flex-column align-items-center justify-content-center min-vh-60">
+      <div className="card w-100" style={{ maxWidth: 672, background: 'var(--bg-surface)', color: 'var(--text-primary)' }}>
+        <h2 className="h3 mb-4" style={{ color: 'var(--text-primary)' }}>Profile Creation</h2>
+        <form onSubmit={handleSubmit} className="row g-3">
+          <div className="col-12">
+            <label className="form-label">Upload Resume (PDF, DOCX, etc.)</label>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,.rtf"
+              className="form-control"
+              onChange={e => setFile(e.target.files?.[0] || null)}
+              required
+            />
+          </div>
+          <div className="col-12">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading || !file}
+            >
+              {loading ? "Uploading..." : "Upload Resume"}
+            </button>
+          </div>
+        </form>
+        <div className="mt-3 p-3 rounded" style={{ minHeight: 40, background: 'var(--bg-surface-hover)', color: 'var(--text-primary)' }}>
+          {status && <p className="text-success mb-0">{status}</p>}
+          {error && <p className="text-danger mb-0">{error}</p>}
+        </div>
       </div>
     </div>
   );
